@@ -1,0 +1,12 @@
+title = "DevSecOps Lab Gitleaks Config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+  description = "Rotated/remediated findings"
+  # Lab token — fake value, no rotation needed.
+  # Real-world: rotate the credential BEFORE adding it here.
+  regexes = [
+    '''kT9pR2mWx7QvL4nB8zYcF6hJ3dS5aG1uE0iO9rXw''',
+  ]
