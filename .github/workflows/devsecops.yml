@@ -29,7 +29,6 @@ jobs:
   sast:
     name: SAST (Semgrep)
     runs-on: ubuntu-latest
-    continue-on-error: true
     needs: secrets
     container:
       image: semgrep/semgrep:latest
@@ -49,7 +48,6 @@ jobs:
   sca:
     name: SCA + IaC (Trivy)
     runs-on: ubuntu-latest
-    continue-on-error: true
     needs: secrets
     steps:
       - uses: actions/checkout@v4
@@ -102,12 +100,21 @@ jobs:
 
       - name: ZAP full scan
         run: |
+          mkdir -p zap-out
+          cp .zap/rules.tsv zap-out/
+          chmod 777 zap-out
           docker run --rm --network zapnet \
-            -v "$(pwd)/.zap:/zap/wrk/:rw" \
+            -v "$(pwd)/zap-out:/zap/wrk/:rw" \
             -t ghcr.io/zaproxy/zaproxy:stable \
             zap-full-scan.py -t http://lab-app:8080 \
               -r zap-report.html -c rules.tsv -I
 
+      - name: Upload ZAP report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-out/zap-report.html 
       - name: Cleanup
         if: always()
         run: docker rm -f lab-app || true
