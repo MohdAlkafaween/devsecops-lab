@@ -1,0 +1,5 @@
+40012	FAIL	(Cross Site Scripting Reflected)
+90020	FAIL	(Remote OS Command Injection)
+40018	FAIL	(SQL Injection)
+10036	IGNORE	(Server Version Leak)
+10049	IGNORE	(Cacheable Content)

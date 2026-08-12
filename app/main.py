@@ -8,6 +8,15 @@ app = Flask(__name__)
 # FLAW 1 (Gitleaks): hardcoded credential
 INTERNAL_API_TOKEN = "kT9pR2mWx7QvL4nB8zYcF6hJ3dS5aG1uE0iO9rXw"
 
+@app.route("/")
+def index():
+    return """<html><body>
+    <a href="/health">health</a>
+    <a href="/user?id=1">user</a>
+    <a href="/ping?host=127.0.0.1">ping</a>
+    <a href="/greet?name=guest">greet</a>
+    </body></html>"""
+
 @app.route("/health")
 def health():
     return jsonify(status="ok")

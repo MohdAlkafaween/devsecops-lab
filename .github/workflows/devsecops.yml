@@ -72,3 +72,40 @@ jobs:
             --exit-code 1 . 
       - name: Scan for secrets
         run: gitleaks git . --redact --verbose
+  dast:
+    name: DAST (OWASP ZAP)
+    runs-on: ubuntu-latest
+    needs: [sast, sca]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and start app
+        run: |
+          docker build -t devsecops-lab:test .
+          docker network create zapnet
+          docker run -d --name lab-app --network zapnet devsecops-lab:test
+
+      - name: Wait for app
+        run: |
+          for i in $(seq 1 30); do
+            if docker run --rm --network zapnet curlimages/curl:latest \
+                 -sf http://lab-app:8080/health; then
+              echo "App ready after $i attempts"
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs lab-app
+          exit 1
+
+      - name: ZAP full scan
+        run: |
+          docker run --rm --network zapnet \
+            -v "$(pwd)/.zap:/zap/wrk/:rw" \
+            -t ghcr.io/zaproxy/zaproxy:stable \
+            zap-full-scan.py -t http://lab-app:8080 \
+              -r zap-report.html -c rules.tsv -I
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f lab-app || true
