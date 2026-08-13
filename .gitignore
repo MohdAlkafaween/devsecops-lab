@@ -1,0 +1,8 @@
+# Scan artifacts
+zap-report.html
+zap-full.html
+zap-out/
+.zap/*.html
+*.sarif
+reivy.txt
+trivy-*.json
