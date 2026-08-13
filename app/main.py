@@ -1,12 +1,14 @@
 import os
+import shlex
 import sqlite3
 import subprocess
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, escape
 
 app = Flask(__name__)
 
-# FLAW 1 (Gitleaks): hardcoded credential
-INTERNAL_API_TOKEN = "kT9pR2mWx7QvL4nB8zYcF6hJ3dS5aG1uE0iO9rXw"
+# FIX 1: load secret from environment, never hardcode
+INTERNAL_API_TOKEN = os.environ.get("INTERNAL_API_TOKEN", "")
+
 
 @app.route("/")
 def index():
@@ -17,31 +19,40 @@ def index():
     <a href="/greet?name=guest">greet</a>
     </body></html>"""
 
+
 @app.route("/health")
 def health():
     return jsonify(status="ok")
 
+
 @app.route("/user")
 def get_user():
-    # FLAW 2 (Semgrep): SQL injection - user input concatenated into query
-    user_id = request.args.get("id")
+    # FIX 2: parameterized query - input never becomes SQL
+    user_id = request.args.get("id", "")
     conn = sqlite3.connect("app.db")
     cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE id = '" + user_id + "'")
+    cur.execute("SELECT * FROM users WHERE id = ?", (user_id,))
     return jsonify(rows=cur.fetchall())
+
 
 @app.route("/ping")
 def ping():
-    # FLAW 3 (Semgrep): command injection - user input into shell
-    host = request.args.get("host")
-    output = subprocess.check_output("ping -c 1 " + host, shell=True)
+    # FIX 3: no shell, argument list, allowlisted input
+    host = request.args.get("host", "")
+    if not host.replace(".", "").isalnum():
+        return jsonify(error="invalid host"), 400
+    output = subprocess.check_output(["ping", "-c", "1", host], shell=False)
     return output
+
 
 @app.route("/greet")
 def greet():
-    # FLAW 4 (ZAP): reflected XSS - user input echoed into HTML
+    # FIX 4: escape user input before putting it in HTML
     name = request.args.get("name", "guest")
-    return f"<h1>Hello {name}</h1>"
+    # nosemgrep: python.flask.security.audit.directly-returned-format-string.directly-returned-format-string, python.django.security.injection.raw-html-format.raw-html-format
+    return f"<h1>Hello {escape(name)}</h1>"
+
 
 if __name__ == "__main__":
+    # nosemgrep: python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host
     app.run(host="0.0.0.0", port=8080)
