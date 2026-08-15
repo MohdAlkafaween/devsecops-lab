@@ -55,9 +55,9 @@ jobs:
 
       - name: Install Trivy
         run: |
-          TRIVY_VERSION=0.58.1
+          TRIVY_VERSION=0.74.0
           for i in 1 2 3; do
-            wget -q "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" && break
+            wget "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" && break
             echo "Download attempt $i failed, retrying..."
             sleep 5
           done
@@ -67,17 +67,18 @@ jobs:
 
       - name: Scan dependencies
         run: |
-          trivy fs --scanners vuln \
-            --severity HIGH,CRITICAL \
-            --ignore-unfixed \
-            --exit-code 1 .
+          docker run --rm -v "$(pwd):/src" -w /src \
+            aquasec/trivy:0.58.1 fs --scanners vuln \
+              --severity HIGH,CRITICAL \
+              --ignore-unfixed \
+              --exit-code 1 .
 
       - name: Scan Dockerfile
         run: |
-          trivy config \
-            --severity HIGH,CRITICAL \
-            --exit-code 1 .
-
+          docker run --rm -v "$(pwd):/src" -w /src \
+            aquasec/trivy:0.58.1 config \
+              --severity HIGH,CRITICAL \
+              --exit-code 1 .
   dast:
     name: DAST (OWASP ZAP)
     runs-on: ubuntu-latest
