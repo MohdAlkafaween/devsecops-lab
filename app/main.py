@@ -50,7 +50,7 @@ def ping():
 def greet():
     # FIX 4: escape user input before putting it in HTML
     name = request.args.get("name", "guest")
-    # nosemgrep: python.flask.security.audit.directly-returned-format-string.directly-returned-format-string, python.django.security.injection.raw-html-format.raw-html-format
+    # nosemgrep: python.flask.security.audit.directly-returned-format-string.directly-returned-format-string, python.django.security.injection.raw-html-format.raw-html-format, python.flask.security.injection.raw-html-concat.raw-html-format
     return f"<h1>Hello {escape(name)}</h1>"
 
 
