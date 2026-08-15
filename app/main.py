@@ -2,7 +2,8 @@ import os
 import shlex
 import sqlite3
 import subprocess
-from flask import Flask, request, jsonify, escape
+from flask import Flask, request, jsonify
+from markupsafe import escape
 
 app = Flask(__name__)
 
